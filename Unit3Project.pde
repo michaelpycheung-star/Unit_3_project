@@ -1,78 +1,99 @@
-// --- Global Variables ---
-color currentColor;
-float thickness = 5;
-color canvasColor;
-PImage savedImage; // For the Load feature
+//Unit 3 project
+//Drawing app
 
-// Tool states
-int stampMode = 0; // 0: Squiggly, 1: Circle, 2: Square
-float sliderX = 350;
+// 1. Variables
+color selectedColor;
+float thickness;
+float sliderX;
+boolean stampOn;
 
-// Colors
-color red, orange, yellow, green, blue, purple, black;
+// Color Palette 
+color red    = #E63946;
+color blue   = #457B9D;
+color green  = #2ADD8F;
+color yellow = #E9C46A;
+color purple = #8338EC;
+color orange = #F4A261;
+color white  = #FFFFFF;
+color black  = #2B2D42;
 
 void setup() {
   size(800, 600);
-  
-  red    = color(255, 0, 0);
-  orange = color(255, 165, 0);
-  yellow = color(255, 255, 0);
-  green  = color(0, 200, 0);
-  blue   = color(0, 0, 255);
-  purple = color(150, 0, 255);
-  black  = color(0);
-  
-  currentColor = black;
-  canvasColor = color(255);
-  background(canvasColor);
+  background(255);
+
+  // Defaults
+  selectedColor = black;
+  thickness = 5;
+  sliderX = 400; // Slider starts in the middle
+  stampOn = false;
 }
 
 void draw() {
-  // 1. Toolbar UI
+  // toolbar
   noStroke();
-  fill(230);
+  fill(220);
   rect(0, 0, width, 100);
+
+  // 2. Colour bottons
+  circleButton(red, 40, 30, 40);
+  circleButton(blue, 90, 30, 40);
+  circleButton(green, 140, 30, 40);
+  circleButton(yellow, 40, 70, 40);
+  circleButton(purple, 90, 70, 40);
+  circleButton(orange, 140, 70, 40);
+
+  // 3. Slider 
   stroke(0);
-  line(0, 100, width, 100);
+  strokeWeight(2);
+  line(300, 50, 500, 50);
 
-  // 2. Color Buttons (Now including Black)
-  circleButton(red, 30, 30, 25);
-  circleButton(orange, 65, 30, 25);
-  circleButton(yellow, 100, 30, 25);
-  circleButton(green, 30, 70, 25);
-  circleButton(blue, 65, 70, 25);
-  circleButton(purple, 100, 70, 25);
-  circleButton(black, 135, 50, 30); // Black button
-
-  // 3. Thickness Slider
-  drawSlider(200, 50, 150);
-
-  // 4. Indicator
-  drawIndicator(400, 50);
-
-  // 5. Stamp Tools
-  rectButton(color(200), 480, 25, 50, 50, (stampMode == 1), "CIRC");
-  rectButton(color(200), 540, 25, 50, 50, (stampMode == 2), "RECT");
-
-  // 6. Action Buttons
-  actionButton("NEW", 650, 20, 80, 20);
-  actionButton("SAVE", 650, 45, 80, 20);
-  actionButton("LOAD", 650, 70, 80, 20);
-
-  // 7. Continuous Drawing (Squiggly)
-  if (mousePressed && mouseY > 100 && stampMode == 0) {
-    stroke(currentColor);
-    strokeWeight(thickness);
-    line(pmouseX, pmouseY, mouseX, mouseY);
+  // Knob
+  if (dist(mouseX, mouseY, sliderX, 50) < 15) {
+    fill(150);
+  } else {
+    fill(255);
   }
-}
+  circle(sliderX, 50, 25);
 
-// --- Required Button Functions ---
+  // slider position to thickness
+  thickness = map(sliderX, 300, 500, 1, 30);
+
+  // 4. Indicator 
+  fill(selectedColor);
+  noStroke();
+  if (stampOn) {
+    rect(550, 35, thickness, thickness);
+  } else {
+    circle(565, 50, thickness);
+  }
+
+  // 5. STAMP & NEW BUTTONS
+  rectButton("STAMP", 620, 20, 70, 30, stampOn);
+  rectButton("NEW", 710, 20, 70, 30, false);
+
+  //Drawing logic
+  if (mousePressed && mouseY > 100) {
+    stroke(selectedColor);
+    strokeWeight(thickness);
+    if (stampOn) {
+      fill(selectedColor);
+      noStroke();
+      
+      rect(mouseX - thickness/2, mouseY - thickness/2, thickness, thickness);
+    } else {
+      
+      line(pmouseX, pmouseY, mouseX, mouseY);
+    }
+  }
+} 
+
+//functions
 
 void circleButton(color c, float x, float y, float d) {
+  // Tactile
   if (dist(mouseX, mouseY, x, y) < d/2) {
-    strokeWeight(3);
-    stroke(100);
+    strokeWeight(4);
+    stroke(255);
   } else {
     strokeWeight(1);
     stroke(0);
@@ -81,105 +102,46 @@ void circleButton(color c, float x, float y, float d) {
   circle(x, y, d);
 }
 
-void rectButton(color c, float x, float y, float w, float h, boolean active, String label) {
-  if (mouseX > x && mouseX < x+w && mouseY > y && mouseY < y+h) {
-    strokeWeight(4);
+void rectButton(String label, float x, float y, float w, float h, boolean active) {
+  // Tactile
+  if ((mouseX > x && mouseX < x+w && mouseY > y && mouseY < y+h) || active) {
+    fill(100);
   } else {
-    strokeWeight(active ? 3 : 1);
+    fill(200);
   }
-  stroke(active ? color(0, 120, 255) : 0);
-  fill(c);
+  stroke(0);
+  strokeWeight(1);
   rect(x, y, w, h);
   fill(0);
   textAlign(CENTER, CENTER);
   text(label, x + w/2, y + h/2);
 }
 
-// --- Action & UI Handlers ---
+// input functions
 
 void mousePressed() {
-  // Color selection
-  if (dist(mouseX, mouseY, 30, 30) < 12) { currentColor = red; stampMode = 0; }
-  if (dist(mouseX, mouseY, 65, 30) < 12) { currentColor = orange; stampMode = 0; }
-  if (dist(mouseX, mouseY, 100, 30) < 12) { currentColor = yellow; stampMode = 0; }
-  if (dist(mouseX, mouseY, 30, 70) < 12) { currentColor = green; stampMode = 0; }
-  if (dist(mouseX, mouseY, 65, 70) < 12) { currentColor = blue; stampMode = 0; }
-  if (dist(mouseX, mouseY, 100, 70) < 12) { currentColor = purple; stampMode = 0; }
-  if (dist(mouseX, mouseY, 135, 50) < 15) { currentColor = black; stampMode = 0; }
+  
+  if (dist(mouseX, mouseY, 40, 30) < 20) { selectedColor = red; stampOn = false; }
+  if (dist(mouseX, mouseY, 90, 30) < 20) { selectedColor = blue; stampOn = false; }
+  if (dist(mouseX, mouseY, 140, 30) < 20) { selectedColor = green; stampOn = false; }
+  if (dist(mouseX, mouseY, 40, 70) < 20) { selectedColor = yellow; stampOn = false; }
+  if (dist(mouseX, mouseY, 90, 70) < 20) { selectedColor = purple; stampOn = false; }
+  if (dist(mouseX, mouseY, 140, 70) < 20) { selectedColor = orange; stampOn = false; }
 
-  // Stamp Toggles
-  if (mouseX > 480 && mouseX < 530 && mouseY > 25 && mouseY < 75) stampMode = (stampMode == 1) ? 0 : 1;
-  if (mouseX > 540 && mouseX < 590 && mouseY > 25 && mouseY < 75) stampMode = (stampMode == 2) ? 0 : 2;
-
-  // Action Button Logic
-  if (mouseX > 650 && mouseX < 730) {
-    // NEW
-    if (mouseY > 20 && mouseY < 40) {
-      fill(255);
-      noStroke();
-      rect(0, 101, width, height);
-    }
-    // SAVE
-    if (mouseY > 45 && mouseY < 65) {
-      PImage canvasPart = get(0, 101, width, height-101);
-      canvasPart.save("myPainting.png");
-      println("Saved!");
-    }
-    // LOAD
-    if (mouseY > 70 && mouseY < 90) {
-      savedImage = loadImage("myPainting.png");
-      if (savedImage != null) {
-        image(savedImage, 0, 101);
-      }
-    }
+  // Toggle Stamp Button
+  if (mouseX > 620 && mouseX < 690 && mouseY > 20 && mouseY < 50) {
+    stampOn = !stampOn;
   }
 
-  // Stamp Placement
-  if (mouseY > 100) {
-    fill(currentColor);
-    noStroke();
-    if (stampMode == 1) circle(mouseX, mouseY, thickness * 5);
-    if (stampMode == 2) rect(mouseX - (thickness*2.5), mouseY - (thickness*2.5), thickness*5, thickness*5);
+  // Clear Canvas 
+  if (mouseX > 710 && mouseX < 780 && mouseY > 20 && mouseY < 50) {
+    background(255);
   }
 }
 
 void mouseDragged() {
-  if (mouseX >= 200 && mouseX <= 350 && mouseY > 40 && mouseY < 60) {
+
+  if (mouseX >= 300 && mouseX <= 500 && mouseY > 30 && mouseY < 70) {
     sliderX = mouseX;
-    thickness = map(sliderX, 200, 350, 1, 25);
   }
-}
-
-void drawSlider(float x, float y, float len) {
-  stroke(150);
-  strokeWeight(4);
-  line(x, y, x + len, y);
-  if (dist(mouseX, mouseY, sliderX, y) < 10) fill(100);
-  else fill(255);
-  strokeWeight(1);
-  stroke(0);
-  circle(sliderX, y, 15);
-}
-
-void drawIndicator(float x, float y) {
-  fill(255);
-  stroke(0);
-  strokeWeight(1);
-  rect(x - 25, y - 25, 50, 50);
-  fill(currentColor);
-  noStroke();
-  circle(x, y, thickness * 1.5);
-}
-
-void actionButton(String label, float x, float y, float w, float h) {
-  if (mouseX > x && mouseX < x+w && mouseY > y && mouseY < y+h) fill(200);
-  else fill(255);
-  stroke(0);
-  strokeWeight(1);
-  rect(x, y, w, h);
-  fill(0);
-  textAlign(CENTER, CENTER);
-  textSize(10);
-  text(label, x + w/2, y + h/2);
-  textSize(12); // Reset
 }
